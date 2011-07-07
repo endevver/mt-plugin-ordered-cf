@@ -1,0 +1,13 @@
+name: Ordered Custom Fields
+key:  OrderedCF
+id:   OrderedCF
+
+callbacks:
+    MT::App::CMS::template_param.list_field:
+        priority: 10
+        code: $OrderedCF::OrderedCF::insert_orderedcf_link
+
+applications:
+    cms:
+        methods:
+            order_field: $OrderedCF::OrderedCF::mode_order_field
