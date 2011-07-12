@@ -1,11 +1,29 @@
 name: Ordered Custom Fields
 key:  OrderedCF
 id:   OrderedCF
+plugin_class: OrderedCF
+schema_version: 14
+
+object_types:
+    permission:
+        page_prefs:     text meta
+        category_prefs: text meta
+        folder_prefs:   text meta
+        author_prefs:   text meta
+
+init_app: $OrderedCF::OrderedCF::App::init_app
 
 callbacks:
-    MT::App::CMS::template_param.list_field:
-        priority: 10
-        code: $OrderedCF::OrderedCF::insert_orderedcf_link
+    post_init: $OrderedCF::OrderedCF::post_init
+#     MT::App::CMS::template_param.list_field:
+#         priority: 10
+#         code: $OrderedCF::OrderedCF::insert_orderedcf_link
+
+upgrade_functions:
+    permission_meta_table:
+        priority: 1
+        version_limit: 14
+        code: $OrderedCF::OrderedCF::Upgrade::create_table_permission_meta
 
 applications:
     cms:
