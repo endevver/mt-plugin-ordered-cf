@@ -32,15 +32,7 @@ sub mode_save_prefs {
         },
         $prefs,
     );
-    # my $col   = .'_prefs';
-    # $perms->can($col)
-    #     or return $app->errtrans('Invalid request');
-    # 
-    # 
-    # $perms->$col($prefs);
-    # $perms->save
-    #   or return $app->errtrans( "Saving permissions failed: [_1]",
-    #                             $perms->errstr );
+
     $app->send_http_header("text/json");
     return "true";
 }

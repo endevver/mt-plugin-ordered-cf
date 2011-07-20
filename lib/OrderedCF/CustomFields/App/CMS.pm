@@ -87,14 +87,6 @@ sub populate_field_loop {
             = $tmpl->createElement('include', { name => $beacon_tmpl });
         $tmpl->insertAfter($beacon, $content_fields);
     }
-    # print STDERR "\n\n\n\n========================\n";
-    # print STDERR 'populate_field_loop_orig return: '.Dumper(\@return)."\n";
-    # my $field_pat = qr/^(disp_prefs_.*custom|field_loop)/;
-    # print STDERR Dumper({
-    #     map {
-    #             m/$field_pat/ ? ( $_ => $param->{$_} ) : ()
-    #         } keys %$param
-    # })."\n";
 
     # Load user-specific prefs for $type on $blog_id
     my $blog_id   = $q->param('blog_id');
@@ -111,7 +103,6 @@ sub populate_field_loop {
         $prefs = $orderedcf->load_prefs( $type, $args );
     }
     return unless $prefs;
-    # print STDERR 'prefs: '.Dumper($prefs);
 
     # Convert prefs into a simple @field_order
     my (@field_order, %seen);
@@ -125,18 +116,10 @@ sub populate_field_loop {
     }
 
     return unless @field_order;
-    # print STDERR '@field_order: '.Dumper(\@field_order);
-    # print STDERR '$param->{disp_prefs*}: '
-    #     .Dumper({
-    #                 map { $_ => $param->{$_} } 
-    #                 grep { m/disp_prefs/ } keys %$param
-    #             });
-    # print STDERR '$param->{field_loop} before: '.Dumper($param->{field_loop});
 
     # Create an lookup index of all known fields keyed by field ID
     my %fields = map { $_->{field_id} => $_ } @{$param->{field_loop}}
         or return;
-    # print STDERR '%fields: '.Dumper(\%fields);
 
     # Tack all fields onto the end of @field_order to account for
     # hidden fields, which do not appear in the display prefs record
@@ -155,16 +138,10 @@ sub populate_field_loop {
 
     # Store reference to @ordered_loop as the new value for field_loop param
     $param->{field_loop} = \@ordered_loop;
-    # print STDERR '$param->{field_loop} after: '.Dumper($param->{field_loop});
 }
 
 sub field_loop {
-    my (%param)   = @_;
-    my $sorted    = $field_loop_orig->(@_);
-    # print STDERR "\n\n\n\n========================\n";
-    # print STDERR 'field_loop params: '  .Dumper(\%param), "\n\n",
-    #              '$sorted fields: '     .Dumper( $sorted )."\n";
-    $sorted;
+    $field_loop_orig->(@_);
 }
 
 
