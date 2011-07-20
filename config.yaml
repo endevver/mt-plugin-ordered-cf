@@ -11,6 +11,8 @@ object_types:
         folder_prefs:   text meta
         author_prefs:   text meta
 
+init_request: $OrderedCF::OrderedCF::init_request
+
 callbacks:
     post_init:                  $OrderedCF::OrderedCF::post_init
     template_source.edit_entry: $OrderedCF::OrderedCF::App::replace_prefs_save_mode

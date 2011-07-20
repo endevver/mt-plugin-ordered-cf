@@ -41,6 +41,16 @@ sub init_app {
     OrderedCF::CustomFields::App::CMS->override_methods( $app );
 }
 
+sub init_request {
+    my $app = shift;
+    my $q = $app->query;
+    return unless ref $app
+              and $app->isa('MT::App::CMS')
+              and $app->mode eq 'save'
+              and $q->param('_type') eq 'blog';
+    $q->delete('bar_position', 'custom_prefs');
+}
+
 sub post_init {
     my $cb     = shift;
     $cb->plugin->init_meta_fields(@_);
