@@ -9,38 +9,77 @@ use Carp qw( croak );
 use base qw( MT::App::CMS );
 
 sub mode_save_prefs {
-    my $app    = shift;
-    my $q      = $app->query;
-    my $plugin = OrderedCF->instance();
-    my $perms  = $app->permissions
+    my $app          = shift;
+    my $q            = $app->query;
+    my $blog_default = $q->param('set_blog_default');
+    my $blog_id      = $q->param('blog_id') || 0;
+    my $author_id    = $blog_default ? 0 : eval { $app->user->id };
+    my $plugin       = OrderedCF->instance();
+    my $perms        = $app->permissions
       or return $app->errtrans("No permissions");
 
     $app->validate_magic() or return;
 
+    return $app->errtrans('Bad author ID') unless defined $author_id;
+
     my $prefs = __PACKAGE__->_prefs_from_app_params();
-    my $col   = $q->param('_type').'_prefs';
-    $perms->can($col)
-        or return $app->errtrans('Invalid request');
-    
-    $perms->$col($prefs);
-    $perms->save
-      or return $app->errtrans( "Saving permissions failed: [_1]",
-                                $perms->errstr );
+
+    $plugin->save_prefs(
+        $q->param('_type'),
+        {
+            $blog_id    ? (blog_id => $blog_id)      : (),
+            $author_id  ? (author_id => $author_id ) : ()
+        },
+        $prefs,
+    );
+    # my $col   = .'_prefs';
+    # $perms->can($col)
+    #     or return $app->errtrans('Invalid request');
+    # 
+    # 
+    # $perms->$col($prefs);
+    # $perms->save
+    #   or return $app->errtrans( "Saving permissions failed: [_1]",
+    #                             $perms->errstr );
     $app->send_http_header("text/json");
     return "true";
 }
 
+sub insert_blog_default_option {
+    my ($cb, $app, $param, $tmpl) = @_;
+    my $reset = $tmpl->getElementById('reset_display_options')
+        or return;
+
+    my $blog_default = $tmpl->createElement(
+        'app:setting',
+        {
+            id => 'blog_default_options',
+            # label => 'Blog<br />default',
+            label_class => 'display-options',
+        }
+    );
+    $tmpl->insertBefore($blog_default, $reset);
+
+    $blog_default->innerHTML(q{
+            <ul>
+                <li><input type="checkbox" name="set_blog_default" id="set-blog-default" value="1" /> Save as blog default?</li>
+            </ul>
+    });
+}
 
 sub remove_entry_display_cfg {
     my ($cb, $app, $param, $tmpl) = @_;
     my $field_cfg = $tmpl->getElementById('default-field-settings');
     $field_cfg->setAttribute( 'shown' => 0 );
-    print STDERR Dumper($field_cfg);
 }
 
 sub replace_prefs_save_mode {
     my ( $cb, $app, $tmpl ) = @_;
-    $$tmpl =~ s{__mode=save_entry_prefs}{__mode=orderedcf_save_prefs}g;
+    my $pat     = q{__mode=save_entry_prefs'};
+    my $replace = q{__mode=orderedcf_save_prefs}
+                . q{&set_blog_default='}
+                . q{+document.getElementById('set-blog-default').value};
+    $$tmpl =~ s{$pat}{$replace}g;
 }
 
 sub _prefs_from_app_params {
