@@ -31,7 +31,6 @@ sub instance {
                     MT->component($_)->registry('id') eq __PACKAGE__
                 }
             } keys %MT::Components;
-    # print STDERR '$instance: '.Dumper($instance);
     return $pkg->Instance( $instance ) if $instance;
 }
 
@@ -88,9 +87,6 @@ sub load_prefs {
         author_id => $args->{author_id} || 0
     }) or return;
 
-    # print STDERR 'load_prefs args: '.Dumper($args)."\n";
-    # print STDERR 'load_prefs perm: '.Dumper($perm)."\n";
-
     my $loader = sub {
         my $col = shift;
         $perm->is_meta_column($col) ? $perm->meta($col, @_)
@@ -99,7 +95,6 @@ sub load_prefs {
 
     my $prefs_col = "${type}_prefs";
     my $prefs = $loader->($prefs_col);
-    # print STDERR 'load_prefs prefs: '.Dumper($prefs)."\n";
     $prefs;
 }
 
@@ -126,8 +121,6 @@ sub save_prefs {
     return 'Could not create permission record: '.MT::Permission->errstr
         unless $perm;
 
-    # print STDERR 'save_display_prefs args: '.Dumper(\@_)."\n";
-
     my $loader = sub {
         my $col = shift;
         $perm->is_meta_column($col) ? $perm->meta($col, @_)
@@ -138,7 +131,6 @@ sub save_prefs {
     $loader->( $prefs_col, $prefs );
     my $rc = $perm->save
         or croak "Could not save $type display prefs: ".$perm->errstr;
-    # print STDERR 'save_display_prefs perm: '.Dumper($perm)."\n";
     $rc;
 }
 
