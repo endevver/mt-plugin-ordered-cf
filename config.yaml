@@ -1,7 +1,7 @@
-name: Ordered Custom Fields
-key:  OrderedCF
-id:   OrderedCF
-plugin_class: OrderedCF
+name:           Ordered Custom Fields
+key:            OrderedCF
+id:             OrderedCF
+plugin_class:   OrderedCF
 schema_version: 14
 
 object_types:
@@ -11,13 +11,10 @@ object_types:
         folder_prefs:   text meta
         author_prefs:   text meta
 
-init_app: $OrderedCF::OrderedCF::App::init_app
-
 callbacks:
-    post_init: $OrderedCF::OrderedCF::post_init
-#     MT::App::CMS::template_param.list_field:
-#         priority: 10
-#         code: $OrderedCF::OrderedCF::insert_orderedcf_link
+    post_init:                  $OrderedCF::OrderedCF::post_init
+    template_source.edit_entry: $OrderedCF::OrderedCF::App::replace_prefs_save_mode
+    template_param.cfg_entry:   $OrderedCF::OrderedCF::App::remove_entry_display_cfg
 
 upgrade_functions:
     permission_meta_table:
@@ -28,4 +25,4 @@ upgrade_functions:
 applications:
     cms:
         methods:
-            order_field: $OrderedCF::OrderedCF::mode_order_field
+            orderedcf_save_prefs: $OrderedCF::OrderedCF::App::mode_save_prefs

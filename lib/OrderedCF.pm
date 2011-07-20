@@ -5,22 +5,49 @@ use warnings;
 use YAML;
 use Data::Dumper;
 use Carp qw( croak );
-use base qw( MT::Plugin );
+use List::Util qw( first );
 
-sub post_init {
-    my $cb = shift;
-    my $plugin = shift;
-    $cb->plugin->init_meta_fields(@_);
+use base qw( MT::Plugin Class::Data::Inheritable );
+
+__PACKAGE__->mk_classdata('Instance');
+
+sub instance {
+    my $pkg = shift;
+    return $pkg->Instance if $pkg->Instance;
+
+    # Try loading plugin using the buggy MT->component
+    # See https://openmelody.lighthouseapp.com/projects/26604/tickets/990
+    my ($instance)
+        =  map { MT->component($_) } first { MT->component($_) }
+               ( 'mt-plugin-ordered-cf', (ref $pkg||$pkg) );
+
+    # If that didn't work, iterate over %MT::Components and check each 
+    # component's 'id' registry value which should be OrderedCF for this 
+    # plugin (as seen in config.yaml)
+    ($instance)
+        ||= map { MT->component($_) }
+            first {
+                eval {
+                    MT->component($_)->registry('id') eq __PACKAGE__
+                }
+            } keys %MT::Components;
+    # print STDERR '$instance: '.Dumper($instance);
+    return $pkg->Instance( $instance ) if $instance;
 }
 
-sub meta_field_column_defs {
-    return $_[0]->registry('object_types', 'permission') || {};
+sub init_app {
+    my $app = shift;
+    require OrderedCF::CustomFields::App::CMS;
+    OrderedCF::CustomFields::App::CMS->override_methods( $app );
+}
+
+sub post_init {
+    my $cb     = shift;
+    $cb->plugin->init_meta_fields(@_);
 }
 
 sub init_meta_fields {
     my $self = shift;
-    warn "self: $self" if ref $self ne 'OrderedCF';
-    # my $plugin     = MT->component('mt-plugin-ordered-cf');
     my $perm_class = MT->model('permission');
 
     $perm_class->properties->{meta} = 1;
@@ -31,7 +58,6 @@ sub init_meta_fields {
     eval "require ${perm_class}::Meta;";
     return 1;
 }
-
 
 sub load_prefs {
     my $self            = shift;
@@ -78,8 +104,8 @@ sub save_prefs {
             or $args->{author_id}
             or $type eq 'author';
 
-    croak "Cannot save $type display prefs without prefs".Dumper(\@_)
-        unless $prefs;
+    # croak "Cannot save $type display prefs without prefs".Dumper(\@_)
+    #     unless $prefs;
 
     require MT::Permission;
     my $perm = MT::Permission->get_by_key({
@@ -90,7 +116,7 @@ sub save_prefs {
     return 'Could not create permission record: '.MT::Permission->errstr
         unless $perm;
 
-    print STDERR 'save_display_prefs args: '.Dumper(\@_)."\n";
+    # print STDERR 'save_display_prefs args: '.Dumper(\@_)."\n";
 
     my $loader = sub {
         my $col = shift;
@@ -102,83 +128,15 @@ sub save_prefs {
     $loader->( $prefs_col, $prefs );
     my $rc = $perm->save
         or croak "Could not save $type display prefs: ".$perm->errstr;
-    print STDERR 'save_display_prefs perm: '.Dumper($perm)."\n";
+    # print STDERR 'save_display_prefs perm: '.Dumper($perm)."\n";
     $rc;
 }
 
-sub custom_cfield_order {
-    my ( $app )  = shift;
-    my $q        = $app->query;
-    my $obj_type = $q->param('_type');
-    my $user     = $app->user;
-    my $author_id = $user->id if $user;
-    my $blog_id  = $app->blog ? $app->blog->id : 0;
-
-    require MT::Permission;
-
-    require MT::PluginData;
-    my $plugindata = MT::PluginData->get_by_key({
-        plugin => 'CustomFields',
-        key => "field_order_$author_id"
-    });
-
-    my $data = $plugindata->data || {};
-    $data->{$blog_id} ||= {};
-
-    my $order = $data->{$blog_id}->{$obj_type};
-
+sub meta_field_column_defs {
+    return $_[0]->registry('object_types', 'permission') || {};
 }
 
-sub default_cfield_order {
-    my ( $app )  = shift;
-    my $q        = $app->query;
-    my $obj_type = $q->param('_type');
-    my $user     = $app->user;
-    my $blog_id  = $app->blog ? $app->blog->id : 0;
-
-    my $prefs = load_prefs({ type => $obj_type, blog_id => $blog_id });
-
-    # require MT::PluginData;
-    # my $plugindata = MT::PluginData->get_by_key({
-    #     plugin => 'CustomFields',
-    #     key => "field_order_$author_id"
-    # });
-    # 
-    # my $data = $plugindata->data || {};
-    # $data->{$blog_id} ||= {};
-    # 
-    # my $order = $data->{$blog_id}->{$obj_type};
-}
-
-# $app->_parse_entry_prefs( $prefs, \%param, \my @custom_fields );
-# MT::App::CMS::template_param.list_field
-sub insert_orderedcf_link {
-    my ($cb, $app, $param, $tmpl) = @_;
-    my $q   = $app->query;
-    my $blog_id = $q->param('blog_id');
-    my $hint;
-    if ( $q->param('filter_key') ) {
-        my $header = $tmpl->getElementById('header_include');
-        my $html_head = $tmpl->createElement(
-            'setvarblock', { name => 'html_head', append => 1 });
-        my $innerHTML = q{
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script><script type="text/javascript" src="/mte/plugins/OrderedCF/static/OrderedCF.js"></script>};
-        $html_head->innerHTML($innerHTML);
-        $tmpl->insertBefore($html_head, $header);
-        $hint = ' &nbsp; &nbsp; <em>Hint: To customize the blog\'s default field order, just drag the rows.</em>';
-    }
-    else {
-        $hint = ' &nbsp; &nbsp; <em>Hint: To customize the blog\'s default field order, select a quickfilter.</em>';
-    }
-
-    my $head = $tmpl->getElementsByName('content_header')->[0];
-    ( my $html = $head->innerHTML() )
-        =~ s{ (</li>) }{ $hint $1 }smx;
-    $head->innerHTML($html);
-}
-
-sub mode_order_field {
-    my ( $app ) = shift;
-
-}
 1;
+
+__END__
+

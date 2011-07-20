@@ -46,6 +46,7 @@ BEGIN {
               map { File::Spec->file_name_is_absolute( $_ )
                         ? $_ : File::Spec->catfile( $ENV{MT_HOME}, $_ )
                 } @dirs;
+        print STDERR '$ENV{MT_CONFIG}: '.$ENV{MT_CONFIG}."\n";
     }
     chdir $ENV{MT_HOME};
 

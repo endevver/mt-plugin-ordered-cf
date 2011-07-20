@@ -11,7 +11,8 @@ BEGIN {
     @modules = qw(
         OrderedCF
         OrderedCF::App
-        OrderedCF::App::CMS::Entry
+        OrderedCF::CustomFields::App::CMS
+        OrderedCF::Upgrade
         Test::OrderedCF
     );
 }
