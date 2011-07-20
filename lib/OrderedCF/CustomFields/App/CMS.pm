@@ -121,6 +121,11 @@ sub populate_field_loop {
     my %fields = map { $_->{field_id} => $_ } @{$param->{field_loop}}
         or return;
 
+    foreach my $f ( @field_order ) {
+        my ( $fkey ) = values %$f;
+        $fields{$fkey} and $fields{$fkey}->{show_field} = 1;
+    }
+
     # Tack all fields onto the end of @field_order to account for
     # hidden fields, which do not appear in the display prefs record
     # but must appear in the display options panel
@@ -138,6 +143,12 @@ sub populate_field_loop {
 
     # Store reference to @ordered_loop as the new value for field_loop param
     $param->{field_loop} = \@ordered_loop;
+    
+    unless ( $type eq 'entry' ) {
+        $param->{disp_prefs_custom_fields} = \@field_order;
+        $param->{disp_prefs_default_fields}
+            = [ grep { $_->{name} !~ m{^customfield} } @field_order ];
+    }
 }
 
 sub field_loop {

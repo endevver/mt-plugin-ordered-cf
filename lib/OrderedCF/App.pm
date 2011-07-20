@@ -70,7 +70,7 @@ sub replace_prefs_save_mode {
     my $pat     = q{__mode=save_entry_prefs'};
     my $replace = q{__mode=orderedcf_save_prefs}
                 . q{&set_blog_default='}
-                . q{+document.getElementById('set-blog-default').value};
+                . q{+(document.getElementById('set-blog-default').checked ? 1 : 0) };
     $$tmpl =~ s{$pat}{$replace}g;
 }
 
