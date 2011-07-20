@@ -13,10 +13,17 @@ sub mode_save_prefs {
     my $q            = $app->query;
     my $blog_default = $q->param('set_blog_default');
     my $blog_id      = $q->param('blog_id') || 0;
-    my $author_id    = $blog_default ? 0 : eval { $app->user->id };
+    my $user         = eval { $app->user };
+    my $author_id    = $blog_default ? 0 : eval { $user->id };
     my $plugin       = OrderedCF->instance();
-    my $perms        = $app->permissions
-      or return $app->errtrans("No permissions");
+    my $perms        = $app->permissions;
+
+    return $app->errtrans("No permissions")
+        unless $user && $perms;
+
+    return  $app->errtrans("No permissions")
+         if $blog_default
+        and ! ( $user->is_superuser || $perms->can_administer_blog );
 
     $app->validate_magic() or return;
 
@@ -39,6 +46,11 @@ sub mode_save_prefs {
 
 sub insert_blog_default_option {
     my ($cb, $app, $param, $tmpl) = @_;
+    my $user  = eval { $app->user };
+    my $perms = $app->permissions;
+    return unless $user  && $user->is_superuser
+               or $perms && $perms->can_administer_blog;
+
     my $reset = $tmpl->getElementById('reset_display_options')
         or return;
 
