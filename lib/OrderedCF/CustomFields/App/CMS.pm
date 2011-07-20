@@ -5,7 +5,6 @@ use warnings;
 use YAML;
 use Data::Dumper;
 use Carp qw( croak );
-
 use Sub::Install;
 use OrderedCF;
 
