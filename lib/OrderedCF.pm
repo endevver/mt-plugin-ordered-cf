@@ -9,6 +9,8 @@ use List::Util qw( first );
 
 use base qw( MT::Plugin Class::Data::Inheritable );
 
+use Melody::Compat;  # Declare plugin requirement
+
 __PACKAGE__->mk_classdata('Instance');
 
 sub instance {
