@@ -42,8 +42,9 @@ sub init_app {
 }
 
 sub init_request {
-    my $app = shift;
-    my $q = $app->query;
+    my $plugin = shift;
+    my ($app)  = @_;
+    my $q      = $app->query;
     return unless ref $app
               and $app->isa('MT::App::CMS')
               and $app->mode eq 'save'
@@ -52,7 +53,7 @@ sub init_request {
 }
 
 sub post_init {
-    my $cb     = shift;
+    my $cb = shift;
     $cb->plugin->init_meta_fields(@_);
 }
 
