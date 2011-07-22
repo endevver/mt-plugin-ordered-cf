@@ -37,9 +37,8 @@ sub instance {
 }
 
 sub init_app {
-    my $app = shift;
     require OrderedCF::CustomFields::App::CMS;
-    OrderedCF::CustomFields::App::CMS->override_methods( $app );
+    OrderedCF::CustomFields::App::CMS->override_methods( @_ );
 }
 
 sub init_request {
